@@ -1,16 +1,38 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
+import { ethers } from 'ethers';
 import { useQuery } from '@apollo/client';
 import { Spin } from 'antd';
 import { GET_ACTIVE_ITEM } from '@/api';
 import NftCard from '@/components/nft-card';
+import contractAddress from '@/constants/contractAddress.json';
+import contractAbi from '@/constants/abi.json';
 import { Web3WalletContext } from './provider';
 import { NftInterface } from '@/types';
 
 export default function Home() {
-  const { isConnected } = useContext(Web3WalletContext);
-  const { data, loading } = useQuery(GET_ACTIVE_ITEM);
+  const { isConnected, signer, chainId } = useContext(Web3WalletContext);
+  const { data, loading, refetch } = useQuery(GET_ACTIVE_ITEM, {});
+  useEffect(() => {
+    if (isConnected) {
+      const NftMarketPlace = new ethers.Contract(
+        //@ts-ignore
+        contractAddress[chainId]?.nftMarketplaceAddress,
+        contractAbi.nftMarketplaceAbi,
+        signer
+      );
+      NftMarketPlace.on('ItemListed', () => {
+        refetch();
+      });
+      NftMarketPlace.on('ItemCanceled', () => {
+        refetch();
+      });
+      return () => {
+        NftMarketPlace.removeAllListeners();
+      };
+    }
+  }, [isConnected]);
   if (!isConnected) {
     return <div>Not connected to wallet...</div>;
   }
