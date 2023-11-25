@@ -1,10 +1,22 @@
 'use client';
+import React from 'react';
 import { ApolloProvider, ApolloClient, InMemoryCache } from '@apollo/client';
-import { createWeb3Modal, defaultConfig } from '@web3modal/ethers5/react';
+import {
+  createWeb3Modal,
+  defaultConfig,
+  useWeb3ModalAccount,
+  useWeb3ModalSigner,
+} from '@web3modal/ethers5/react';
+import { JsonRpcSigner } from '@ethersproject/providers';
+
+export const Web3WalletContext = React.createContext<{
+  isConnected: boolean;
+  chainId?: number;
+  signer?: JsonRpcSigner;
+}>({ isConnected: false });
 
 // 1. Get projectId
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID!;
-console.log(projectId);
 
 // 2. Set chains
 const mainnet = {
@@ -51,7 +63,19 @@ const client = new ApolloClient({
 });
 
 const Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+  const { isConnected, chainId } = useWeb3ModalAccount();
+  const { signer } = useWeb3ModalSigner();
+  return (
+    <Web3WalletContext.Provider
+      value={{
+        isConnected,
+        signer,
+        chainId,
+      }}
+    >
+      <ApolloProvider client={client}>{children}</ApolloProvider>
+    </Web3WalletContext.Provider>
+  );
 };
 
 export default Provider;
