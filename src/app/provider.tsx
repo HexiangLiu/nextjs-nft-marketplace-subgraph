@@ -13,6 +13,7 @@ export const Web3WalletContext = React.createContext<{
   isConnected: boolean;
   chainId?: number;
   signer?: JsonRpcSigner;
+  address?: string;
 }>({ isConnected: false });
 
 // 1. Get projectId
@@ -63,7 +64,7 @@ const client = new ApolloClient({
 });
 
 const Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isConnected, chainId } = useWeb3ModalAccount();
+  const { isConnected, chainId, address } = useWeb3ModalAccount();
   const { signer } = useWeb3ModalSigner();
   return (
     <Web3WalletContext.Provider
@@ -71,6 +72,7 @@ const Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         isConnected,
         signer,
         chainId,
+        address,
       }}
     >
       <ApolloProvider client={client}>{children}</ApolloProvider>
