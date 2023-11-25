@@ -7,6 +7,7 @@ import contractAbi from '@/constants/abi.json';
 import contractAddress from '@/constants/contractAddress.json';
 import { Web3WalletContext } from '@/app/provider';
 import UpdateModal from './update-list-modal';
+import SellModal from './sell-list-modal';
 
 const { Text } = Typography;
 
@@ -21,9 +22,10 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
   const { chainId, signer, address } = useContext(Web3WalletContext);
   const [tokenInfo, setTokenInfo] = useState<TokenInfo>();
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
+  const [showSellModal, setShowSellModal] = useState<boolean>(false);
   const [nftMarketPlace, setNftMarketPlace] = useState<Contract>();
   const isOwner = seller === address?.toLowerCase();
-  const expired = buyer !== '0x0000000000000000000000000000000000000000';
+  const listed = buyer === '0x0000000000000000000000000000000000000000';
 
   useEffect(() => {
     initNFT();
@@ -61,6 +63,14 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
     setShowUpdateModal(false);
   };
 
+  const handleShowSellModal = () => {
+    setShowSellModal(true);
+  };
+
+  const handleCloseSellModal = () => {
+    setShowSellModal(false);
+  };
+
   const handleCancelItem = () => {
     Modal.confirm({
       title: 'Are you sure to cancel the listing?',
@@ -89,9 +99,28 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
     }
   };
 
+  const handleSellItem = async (price: number) => {
+    try {
+      const newPrice = ethers.utils.parseEther(price.toString());
+      await nftMarketPlace?.listItem(nftAddress, tokenId, newPrice);
+      setShowSellModal(false);
+      message.success('List NFT Successfully!');
+    } catch (e) {
+      message.error('List NFT Failed...');
+    }
+  };
+
   const renderButtonGroup = () => {
-    if (expired) {
-      return (
+    if (!listed) {
+      return isOwner ? (
+        <Button
+          className='w-full mt-2 font-bold'
+          size='large'
+          onClick={handleShowSellModal}
+        >
+          Sell
+        </Button>
+      ) : (
         <Button className='w-full mt-2 font-bold' size='large' disabled>
           Expired
         </Button>
@@ -125,7 +154,7 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
           )
         }
       >
-        {isOwner && !expired && (
+        {isOwner && listed && (
           <DeleteOutlined
             onClick={handleCancelItem}
             className='text-red-500 text-lg absolute top-4 right-4'
@@ -151,7 +180,9 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
           <div className='flex flex-col w-1/2'>
             <div className='text-gray-500'>Price</div>
             <div className='font-bold'>
-              {ethers.utils.formatEther(`${price}`).toString()} ETH
+              {listed
+                ? `${ethers.utils.formatEther(`${price}`).toString()}ETH`
+                : '-'}
             </div>
           </div>
           <div className='flex flex-col w-1/2'>
@@ -174,6 +205,12 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
         onOk={handleUpdateItem}
         image={tokenInfo?.image}
         price={price}
+      />
+      <SellModal
+        visible={showSellModal}
+        onClose={handleCloseSellModal}
+        onOk={handleSellItem}
+        image={tokenInfo?.image}
       />
     </>
   );
