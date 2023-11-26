@@ -1,4 +1,12 @@
-import { Card, Typography, Skeleton, Button, Modal, message } from 'antd';
+import {
+  Card,
+  Typography,
+  Skeleton,
+  Button,
+  Modal,
+  message,
+  Image,
+} from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Contract, ethers } from 'ethers';
 import { useEffect, useContext, useState, useMemo } from 'react';
@@ -182,7 +190,7 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
     <>
       <Card
         hoverable
-        cover={image ? <img alt='nft' src={image} /> : <Skeleton.Image />}
+        cover={image ? <Image alt='nft' src={image} /> : <Skeleton.Image />}
       >
         {isOwner && listed && (
           <DeleteOutlined
