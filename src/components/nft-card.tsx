@@ -2,28 +2,33 @@ import { Card, Typography, Skeleton, Button, Modal, message } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Contract, ethers } from 'ethers';
 import { useEffect, useContext, useState } from 'react';
-import { NftInterface } from '@/types';
+import { NftCardProps } from '@/types';
 import contractAbi from '@/constants/abi.json';
 import contractAddress from '@/constants/contractAddress.json';
 import { Web3WalletContext } from '@/app/provider';
 import UpdateModal from './update-list-modal';
 import SellModal from './sell-list-modal';
+import ApproveModal from './approve-modal';
 
 const { Text } = Typography;
 
-interface TokenInfo {
-  name: string;
-  description: string;
-  image: string;
-}
-
-const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
-  const { price, seller, tokenId, nftAddress, buyer } = nftInfo;
+const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
+  const {
+    price,
+    seller,
+    tokenId,
+    nftAddress,
+    buyer,
+    image,
+    name,
+    description,
+  } = nftInfo;
   const { chainId, signer, address } = useContext(Web3WalletContext);
-  const [tokenInfo, setTokenInfo] = useState<TokenInfo>();
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
   const [showSellModal, setShowSellModal] = useState<boolean>(false);
+  const [showApproveModal, setShowApproveModal] = useState<boolean>(false);
   const [nftMarketPlace, setNftMarketPlace] = useState<Contract>();
+  const [nftContract, setNftContract] = useState<Contract>();
   const isOwner = seller === address?.toLowerCase();
   const listed = buyer === '0x0000000000000000000000000000000000000000';
 
@@ -32,27 +37,19 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
   }, [tokenId]);
 
   const initNFT = async () => {
-    const BasicNft = new ethers.Contract(
-      //@ts-ignore
-      contractAddress[chainId]?.basicNFTAddress,
-      contractAbi.basicNFTAbi,
-      signer
-    );
     const NftMarketPlace = new ethers.Contract(
       //@ts-ignore
       contractAddress[chainId]?.nftMarketplaceAddress,
       contractAbi.nftMarketplaceAbi,
       signer
     );
+    const nftContract = new ethers.Contract(
+      nftAddress,
+      contractAbi.basicNFTAbi,
+      signer
+    );
+    setNftContract(nftContract);
     setNftMarketPlace(NftMarketPlace);
-    const tokenURI: string = await BasicNft.tokenURI(tokenId);
-    if (tokenURI) {
-      const tokenURIRes: TokenInfo = await (
-        await fetch(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/'))
-      ).json();
-      tokenURIRes.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
-      setTokenInfo(tokenURIRes);
-    }
   };
 
   const handleShowUpdateModal = () => {
@@ -63,12 +60,20 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
     setShowUpdateModal(false);
   };
 
-  const handleShowSellModal = () => {
+  const handleShowSellModal = async () => {
     setShowSellModal(true);
   };
 
   const handleCloseSellModal = () => {
     setShowSellModal(false);
+  };
+
+  const handleShowApproveModal = () => {
+    setShowApproveModal(true);
+  };
+
+  const handleCloseApproveModal = () => {
+    setShowApproveModal(false);
   };
 
   const handleCancelItem = () => {
@@ -99,7 +104,7 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
     }
   };
 
-  const handleSellItem = async (price: number) => {
+  const listItem = async (price: number) => {
     try {
       const newPrice = ethers.utils.parseEther(price.toString());
       await nftMarketPlace?.listItem(nftAddress, tokenId, newPrice);
@@ -107,6 +112,15 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
       message.success('List NFT Successfully!');
     } catch (e) {
       message.error('List NFT Failed...');
+    }
+  };
+
+  const handleSellItem = async (price: number) => {
+    const address = await nftContract?.getApproved(tokenId);
+    if (address !== nftMarketPlace?.address) {
+      handleShowApproveModal();
+    } else {
+      await listItem(price);
     }
   };
 
@@ -146,13 +160,7 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
     <>
       <Card
         hoverable
-        cover={
-          tokenInfo ? (
-            <img alt='nft' src={tokenInfo.image} />
-          ) : (
-            <Skeleton.Image />
-          )
-        }
+        cover={image ? <img alt='nft' src={image} /> : <Skeleton.Image />}
       >
         {isOwner && listed && (
           <DeleteOutlined
@@ -160,18 +168,18 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
             className='text-red-500 text-lg absolute top-4 right-4'
           />
         )}
-        {tokenInfo ? (
+        {name ? (
           <div>
             <div className='font-bold'>
               <Text
                 ellipsis={{
-                  tooltip: tokenInfo.name,
+                  tooltip: name,
                 }}
               >
-                {tokenInfo.name}
+                {name}
               </Text>
             </div>
-            <div>{tokenInfo.description}</div>
+            <div>{description}</div>
           </div>
         ) : (
           <Skeleton />
@@ -203,14 +211,22 @@ const NftCard: React.FC<{ nftInfo: NftInterface }> = ({ nftInfo }) => {
         visible={showUpdateModal}
         onClose={handleCloseUpdateModal}
         onOk={handleUpdateItem}
-        image={tokenInfo?.image}
+        image={image}
         price={price}
       />
       <SellModal
         visible={showSellModal}
         onClose={handleCloseSellModal}
         onOk={handleSellItem}
-        image={tokenInfo?.image}
+        image={image}
+      />
+      <ApproveModal
+        visible={showApproveModal}
+        onClose={handleCloseApproveModal}
+        image={image}
+        to={nftMarketPlace?.address}
+        tokenId={tokenId}
+        nftContract={nftContract}
       />
     </>
   );

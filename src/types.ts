@@ -1,7 +1,15 @@
 export interface NftInterface {
-  price: number;
   nftAddress: string;
   tokenId: string;
-  seller: string;
-  buyer: string;
+  price?: number;
+  seller?: string;
+  buyer?: string;
 }
+
+export interface TokenMetaData {
+  name: string;
+  description?: string;
+  image: string;
+}
+
+export type NftCardProps = NftInterface & TokenMetaData;

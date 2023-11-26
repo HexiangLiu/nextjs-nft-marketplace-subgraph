@@ -7,7 +7,7 @@ interface UpdateModalProps {
   onClose: () => void;
   onOk: (price: number) => void;
   image?: string;
-  price: number;
+  price?: number;
 }
 
 const UpdateModal: React.FC<UpdateModalProps> = ({
@@ -29,12 +29,15 @@ const UpdateModal: React.FC<UpdateModalProps> = ({
       title='NFT Details'
       okText='Update'
       cancelText='Leave it'
+      destroyOnClose
     >
       <div>{image ? <Image alt='nft' src={image} /> : <Skeleton.Image />}</div>
       <div>
         <span className='text-gray-500'>Current Price：</span>
         <span className='font-bold'>
-          {ethers.utils.formatEther(`${price}`).toString()} ETH{' '}
+          {price
+            ? `${ethers.utils.formatEther(`${price}`).toString()} ETH`
+            : '-'}
         </span>
       </div>
       <div className='flex items-center'>
