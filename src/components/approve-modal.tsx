@@ -24,7 +24,7 @@ const ApproveModal: React.FC<ApproveModalProps> = ({
     try {
       await nftContract?.approve(to, tokenId);
       setLoading(true);
-      nftContract?.once('Approval', async () => {
+      nftContract?.on('Approval', async () => {
         message.success('Approve successfully!');
         onClose();
       });
