@@ -1,7 +1,7 @@
 import { Card, Typography, Skeleton, Button, Modal, message } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Contract, ethers } from 'ethers';
-import { useEffect, useContext, useState } from 'react';
+import { useEffect, useContext, useState, useMemo } from 'react';
 import { NftCardProps } from '@/types';
 import contractAbi from '@/constants/abi.json';
 import contractAddress from '@/constants/contractAddress.json';
@@ -23,14 +23,23 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
     name,
     description,
   } = nftInfo;
+
   const { chainId, signer, address } = useContext(Web3WalletContext);
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
   const [showSellModal, setShowSellModal] = useState<boolean>(false);
   const [showApproveModal, setShowApproveModal] = useState<boolean>(false);
   const [nftMarketPlace, setNftMarketPlace] = useState<Contract>();
   const [nftContract, setNftContract] = useState<Contract>();
-  const isOwner = seller === address?.toLowerCase();
-  const listed = buyer === '0x0000000000000000000000000000000000000000';
+
+  const listed = useMemo(
+    () => buyer === '0x0000000000000000000000000000000000000000',
+    [buyer]
+  );
+
+  const isOwner = useMemo(
+    () => seller === address?.toLowerCase(),
+    [seller, address]
+  );
 
   useEffect(() => {
     initNFT();
@@ -124,6 +133,15 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
     }
   };
 
+  const handleBuyItem = async () => {
+    try {
+      await nftMarketPlace?.buyItem(nftAddress, tokenId, { value: price });
+      message.success('Buy NFT success!');
+    } catch (e) {
+      message.error('Buy NFT failed...');
+    }
+  };
+
   const renderButtonGroup = () => {
     if (!listed) {
       return isOwner ? (
@@ -136,7 +154,7 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
         </Button>
       ) : (
         <Button className='w-full mt-2 font-bold' size='large' disabled>
-          Expired
+          No Sale
         </Button>
       );
     }
@@ -150,7 +168,11 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
         Update
       </Button>
     ) : (
-      <Button className='w-full mt-2 font-bold' size='large'>
+      <Button
+        className='w-full mt-2 font-bold'
+        size='large'
+        onClick={handleBuyItem}
+      >
         Buy
       </Button>
     );
@@ -179,7 +201,13 @@ const NftCard: React.FC<{ nftInfo: NftCardProps }> = ({ nftInfo }) => {
                 {name}
               </Text>
             </div>
-            <div>{description}</div>
+            <Text
+              ellipsis={{
+                tooltip: description,
+              }}
+            >
+              {description}
+            </Text>
           </div>
         ) : (
           <Skeleton />

@@ -20,6 +20,9 @@ const useRefetchData = (refetch: (variables?: any) => Promise<any>) => {
       NftMarketPlace.on('ItemCanceled', () => {
         refetch();
       });
+      NftMarketPlace.on('ItemBought', () => {
+        refetch();
+      });
 
       return () => {
         NftMarketPlace.removeAllListeners();

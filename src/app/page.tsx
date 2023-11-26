@@ -13,7 +13,7 @@ import useRefetchData from '@/hooks/useRefetchData';
 
 export default function Home() {
   const [nftList, setNftList] = useState<NftCardProps[]>([]);
-  const { isConnected, signer, chainId } = useContext(Web3WalletContext);
+  const { isConnected, signer } = useContext(Web3WalletContext);
   const { data, loading, refetch } = useQuery(GET_ACTIVE_ITEM, {});
   useRefetchData(refetch);
 
@@ -65,7 +65,7 @@ export default function Home() {
       <h1 className='font-bold text-2xl'>Recently Listed</h1>
       <div className='flex flex-wrap'>
         {nftList?.map((nftItem: NftCardProps, index: number) => (
-          <div key={index} className='p-4 w-3/12'>
+          <div key={index} className='p-4 w-1/5'>
             <NftCard key={index} nftInfo={nftItem} />
           </div>
         ))}
