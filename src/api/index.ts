@@ -12,3 +12,16 @@ export const GET_ACTIVE_ITEM = gql`
     }
   }
 `;
+
+export const GET_USER_ACTIVE_ITEM = gql`
+  query ActiveItems($owner: String!) {
+    activeItems(where: { seller: $owner }) {
+      id
+      buyer
+      seller
+      nftAddress
+      tokenId
+      price
+    }
+  }
+`;
