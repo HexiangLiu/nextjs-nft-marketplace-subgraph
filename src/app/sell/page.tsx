@@ -8,6 +8,7 @@ import { NftCardProps, NftInterface } from '@/types';
 import NftCard from '@/components/nft-card';
 import { Alchemy, Network, OwnedNft } from 'alchemy-sdk';
 import { Web3WalletContext } from '../provider';
+import useRefetchData from '@/hooks/useRefetchData';
 
 // Setup: npm install alchemy-sdk
 
@@ -20,11 +21,12 @@ const alchemy = new Alchemy(config);
 const SellPage = () => {
   const [nfts, setNfts] = useState<OwnedNft[]>([]);
   const { address } = useContext(Web3WalletContext);
-  const { data, loading } = useQuery(GET_USER_ACTIVE_ITEM, {
+  const { data, loading, refetch } = useQuery(GET_USER_ACTIVE_ITEM, {
     variables: {
       owner: address,
     },
   });
+  useRefetchData(refetch);
 
   useEffect(() => {
     if (address) {

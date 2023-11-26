@@ -10,11 +10,13 @@ import contractAddress from '@/constants/contractAddress.json';
 import contractAbi from '@/constants/abi.json';
 import { Web3WalletContext } from './provider';
 import { NftInterface, TokenMetaData, NftCardProps } from '@/types';
+import useRefetchData from '@/hooks/useRefetchData';
 
 export default function Home() {
   const [nftList, setNftList] = useState<NftCardProps[]>([]);
   const { isConnected, signer, chainId } = useContext(Web3WalletContext);
   const { data, loading, refetch } = useQuery(GET_ACTIVE_ITEM, {});
+  useRefetchData(refetch);
 
   const initNFTList = async () => {
     const BasicNft = new ethers.Contract(
@@ -41,27 +43,6 @@ export default function Home() {
       return { ...tokenURIRes, ...nftItem };
     }
   };
-
-  useEffect(() => {
-    if (isConnected) {
-      const NftMarketPlace = new ethers.Contract(
-        //@ts-ignore
-        contractAddress[chainId]?.nftMarketplaceAddress,
-        contractAbi.nftMarketplaceAbi,
-        signer
-      );
-      NftMarketPlace.on('ItemListed', () => {
-        refetch();
-      });
-      NftMarketPlace.on('ItemCanceled', () => {
-        refetch();
-      });
-
-      return () => {
-        NftMarketPlace.removeAllListeners();
-      };
-    }
-  }, [isConnected]);
 
   useEffect(() => {
     if (isConnected && data) {
