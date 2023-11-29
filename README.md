@@ -1,11 +1,14 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Deployed Site: [https://main--ubiquitous-kulfi-fedbb6.netlify.app/](https://main--ubiquitous-kulfi-fedbb6.netlify.app/)
+Only support sepolia testnet (backend hasn't been deployed on mainnet)
+
 1. Home Page:
    1. Show recently listed NFTs
-      1. If you own the NFT, you can update the price
+      1. If you own the NFT, you can update the price or cancel the list
       2. if not, you can buy the NFT
 2. Sell Page:
-   1. You can list your NFT on the marketplace
+   1. Show all your NFT, and you can list yours on the marketplace
 
 ## Getting Started
 
